@@ -30,6 +30,9 @@ se afiliar, basta cadastrar os parâmetros e os links passam a gerar comissão.
 4. **Actions > Radar de ofertas > Run workflow**. Em ~1 minuto as ofertas aparecem
    no arquivo [`OFERTAS.md`](OFERTAS.md) do repositório.
 
+Prefere que o Claude Cowork faça esses passos no seu navegador? Use o roteiro em
+[`docs/COWORK.md`](docs/COWORK.md).
+
 Para ver a vitrine pelo navegador, ative o GitHub Pages (veja "Vitrine" abaixo).
 
 ## Por que API oficial e não raspagem
