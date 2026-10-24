@@ -105,7 +105,11 @@ def main(argv=None):
             continue
         banco.marcar_enviada(o.chave, o.preco, av.nota)
         enviadas.append((o, av))
-    vitrine.atualizar(cfg.pasta_site, enviadas, md=os.path.join(RAIZ, "OFERTAS.md"))
+    # sem novidade nao regrava (evita um commit vazio a cada execucao);
+    # ofertas encerradas tambem somem pela propria vitrine no navegador
+    md = os.path.join(RAIZ, "OFERTAS.md")
+    if enviadas or not os.path.exists(md):
+        vitrine.atualizar(cfg.pasta_site, enviadas, md=md)
     log.info("%d ofertas publicadas%s", len(enviadas), "" if tg.ativo() else " (só na vitrine)")
     banco.fechar()
     return 0
