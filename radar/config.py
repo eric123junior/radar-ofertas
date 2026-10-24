@@ -74,6 +74,14 @@ class Config:
     # Awin: URLs de feed de produtos (CSV) geradas no painel Awin, separadas por virgula
     awin_feeds: list = field(default_factory=list)
 
+    # Viagens: Travelpayouts (passagens do Aviasales)
+    tp_token: str = ""
+    tp_marker: str = ""          # seu id de afiliado; sem ele o link vai sem comissao
+    origem: str = "SAO"          # codigo IATA da cidade (SAO = GRU, CGH e VCP)
+    # em viagem o desconto e medido contra a mediana da rota, entao a regua e outra
+    desconto_minimo_viagem: float = 25.0
+    nota_minima_viagem: float = 15.0
+
     # Telegram
     telegram_token: str = ""
     telegram_chat_id: str = ""
@@ -110,6 +118,11 @@ class Config:
             lomadee_app_token=e("LOMADEE_APP_TOKEN", ""),
             lomadee_source_id=e("LOMADEE_SOURCE_ID", ""),
             awin_feeds=_lista("AWIN_FEEDS"),
+            tp_token=e("TP_TOKEN", ""),
+            tp_marker=e("TP_MARKER", ""),
+            origem=e("ORIGEM", "SAO").upper(),
+            desconto_minimo_viagem=_float("DESCONTO_MINIMO_VIAGEM", 25.0),
+            nota_minima_viagem=_float("NOTA_MINIMA_VIAGEM", 15.0),
             telegram_token=e("TELEGRAM_TOKEN", ""),
             telegram_chat_id=e("TELEGRAM_CHAT_ID", ""),
             banco=e("RADAR_BANCO", cls.banco),

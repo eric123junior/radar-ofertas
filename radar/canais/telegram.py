@@ -16,6 +16,7 @@ NOMES_LOJA = {
     "shopee": "Shopee",
     "lomadee": "Lomadee",
     "awin": "Awin",
+    "aviasales": "Aviasales",
 }
 
 
@@ -24,7 +25,42 @@ def reais(v):
     return "R$ " + s.replace(",", "X").replace(".", ",").replace("X", ".")
 
 
+def _escalas(n):
+    if n is None:
+        return ""
+    return "voo direto" if n == 0 else f"{n} escala" + ("s" if n > 1 else "")
+
+
+def legenda_viagem(oferta, avaliacao):
+    e = html.escape
+    x = oferta.extras
+    linhas = []
+    if oferta.relampago or oferta.desconto_pct >= 35:
+        linhas.append("🔥 <b>PASSAGEM EM PROMOÇÃO</b> 🔥")
+    linhas.append(f"<b>{e(oferta.titulo)}</b>")
+    linhas.append("")
+    if x.get("datas"):
+        linhas.append(f"📅 {e(x['datas'])}")
+    detalhes = " · ".join(d for d in (_escalas(x.get("escalas")), x.get("cia", "")) if d)
+    if detalhes:
+        linhas.append(f"🛫 {e(detalhes)}")
+    if oferta.preco_original:
+        linhas.append(f"Normalmente <s>{reais(oferta.preco_original)}</s>")
+    linhas.append(f"💸 Por <b>{reais(oferta.preco)}</b>"
+                  + (f"  (-{oferta.desconto_pct:.0f}%)" if oferta.desconto_pct else ""))
+    destaques = [m for m in avaliacao.motivos if not m.endswith("% off")]
+    if destaques:
+        linhas.append("✅ " + " · ".join(e(m) for m in destaques[:3]))
+    linhas.append("")
+    linhas.append("⏳ Tarifas mudam a qualquer momento; confira o valor final antes de comprar.")
+    if oferta.afiliado:
+        linhas.append("<i>Link de afiliado: posso receber comissão, sem custo extra para você.</i>")
+    return "\n".join(linhas)
+
+
 def montar_legenda(oferta, avaliacao):
+    if oferta.viagem:
+        return legenda_viagem(oferta, avaliacao)
     e = html.escape
     loja = oferta.extras.get("loja_parceira") or NOMES_LOJA.get(oferta.loja, oferta.loja)
     linhas = []

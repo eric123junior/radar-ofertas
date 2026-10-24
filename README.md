@@ -1,10 +1,11 @@
 # Radar de Ofertas
 
 Caça ofertas relâmpago nas lojas oficiais (Amazon, Mercado Livre, Shopee e lojas
-das redes Lomadee e Awin, como Magalu e Americanas), gera o seu link de afiliado
-e publica as melhores num canal do Telegram e numa vitrine web.
+das redes Lomadee e Awin, como Magalu e Americanas) e **passagens aéreas abaixo do
+preço normal** (Travelpayouts/Aviasales), gera o seu link de afiliado e publica as
+melhores num canal do Telegram e numa vitrine web.
 
-Tudo roda sozinho no GitHub Actions a cada 15 minutos: sem servidor e sem custo.
+Tudo roda sozinho no GitHub Actions de hora em hora: sem servidor e sem custo.
 
 ```
 lojas (APIs oficiais) ──► nota 0-100 ──► filtro ──► Telegram
@@ -12,7 +13,38 @@ lojas (APIs oficiais) ──► nota 0-100 ──► filtro ──► Telegram
                     histórico de preços (SQLite)
 ```
 
+## Passagens aéreas (Travelpayouts)
+
+Em passagem não existe "preço de/por": a promoção é **o preço bem abaixo do normal
+daquela rota**. Por isso o radar:
+
+1. busca, a partir de `ORIGEM` (padrão `SAO`, que cobre Guarulhos, Congonhas e Viracopos),
+   o menor preço para cada destino e as **tarifas especiais** que a própria Aviasales
+   marca como abaixo do normal;
+2. guarda o preço de cada rota (ida e volta e só ida separados) a cada execução;
+3. com 5 ou mais registros, usa a **mediana** como "preço normal" e aprova a passagem
+   que estiver `DESCONTO_MINIMO_VIAGEM`% abaixo (padrão 25%);
+4. a tarifa especial entra mesmo antes de haver histórico;
+5. a mesma rota não é repetida em 24 h, mesmo em outra data, a não ser que caia mais 3%.
+
+Nos primeiros dias saem quase só as tarifas especiais. Conforme o histórico cresce,
+o radar passa a reconhecer as quedas de preço de cada rota.
+
+### Configuração
+
+1. Crie a conta grátis em [travelpayouts.com](https://www.travelpayouts.com/) e entre
+   no programa **Aviasales** (aprovação imediata, sem exigência de vendas).
+2. Em **Perfil > Token da API**, copie o **token** e o **marker** (seu id de afiliado).
+3. No GitHub, crie os secrets `TP_TOKEN` e `TP_MARKER`.
+4. (Opcional) variáveis `ORIGEM`, `DESCONTO_MINIMO_VIAGEM`, `NOTA_MINIMA_VIAGEM`.
+5. Rode **Actions > Diagnostico** para conferir o acesso e depois **Radar de ofertas**.
+
 ## Começando sem afiliação (só o Mercado Livre)
+
+> **Atenção:** em outubro de 2026 o Mercado Livre passou a bloquear (HTTP 403,
+> "PolicyAgent") busca, catálogo, mais vendidos e tendências para apps novos, com
+> token de app ou de usuário. O roteiro abaixo continua aqui para quando o acesso
+> for liberado; o workflow **Diagnostico** mostra na hora se já foi.
 
 Dá para ligar o radar antes de entrar em qualquer programa de afiliados. As
 ofertas saem com o link direto da loja e sem o aviso de afiliado. Quando você
@@ -87,8 +119,10 @@ reconhecer o "de R$ 500 por R$ 250" de um produto que sempre custou R$ 250.
 - **Settings > Secrets and variables > Actions > Variables** (opcionais):
   `PALAVRAS`, `DESCONTO_MINIMO`, `NOTA_MINIMA`, `PRECO_MAXIMO`, `MAX_POR_EXECUCAO`,
   `PUBLICAR_PAGES`.
-- **Actions**: habilite os workflows. O "Radar de ofertas" roda a cada 15 minutos
-  e também pelo botão *Run workflow*.
+- **Actions**: habilite os workflows. O "Radar de ofertas" roda de hora em hora
+  e também pelo botão *Run workflow*. Em repositório privado o plano grátis tem
+  2.000 minutos/mês e cada execução conta pelo menos 1 minuto: de hora em hora dá
+  ~720. Em repositório público os minutos são ilimitados e dá para usar `*/15`.
 
 O workflow guarda o histórico (`estado/radar.db`), a vitrine (`site/ofertas.json`)
 e a lista legível (`OFERTAS.md`) no próprio repositório depois de cada execução.
@@ -126,7 +160,8 @@ radar/
   modelo.py         Oferta (formato único para todas as lojas)
   pontuacao.py      nota 0-100
   banco.py          histórico de preços e anti-repetição (SQLite)
-  fontes/           amazon, mercadolivre, shopee, redes (lomadee + awin)
+  fontes/           amazon, mercadolivre, shopee, redes (lomadee + awin), travelpayouts
+ferramentas/        diagnósticos das APIs (rodam pelo workflow Diagnostico)
   canais/           telegram, vitrine
 site/index.html     vitrine
 tests/              testes sem rede (respostas de exemplo de cada API)
@@ -144,6 +179,7 @@ tests/              testes sem rede (respostas de exemplo de cada API)
 
 ## Próximos passos sugeridos
 
+- Cruzeiros, hotéis e pacotes (fontes em avaliação).
 - Envio para grupos de WhatsApp (API oficial do WhatsApp Business).
 - Encurtador próprio com contagem de cliques por oferta.
 - Busca por categoria e "ofertas do dia" de cada loja, além das palavras-chave.

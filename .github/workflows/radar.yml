@@ -2,8 +2,9 @@ name: Radar de ofertas
 
 on:
   schedule:
-    # a cada 15 minutos (o GitHub pode atrasar alguns minutos em horarios de pico)
-    - cron: "*/15 * * * *"
+    # de hora em hora: cabe nos 2.000 min/mes gratis de repositorio privado
+    # (~720 min). Em repositorio publico pode voltar para "*/15 * * * *".
+    - cron: "7 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -50,6 +51,11 @@ jobs:
           LOMADEE_APP_TOKEN: ${{ secrets.LOMADEE_APP_TOKEN }}
           LOMADEE_SOURCE_ID: ${{ secrets.LOMADEE_SOURCE_ID }}
           AWIN_FEEDS: ${{ secrets.AWIN_FEEDS }}
+          TP_TOKEN: ${{ secrets.TP_TOKEN }}
+          TP_MARKER: ${{ secrets.TP_MARKER }}
+          ORIGEM: ${{ vars.ORIGEM }}
+          DESCONTO_MINIMO_VIAGEM: ${{ vars.DESCONTO_MINIMO_VIAGEM }}
+          NOTA_MINIMA_VIAGEM: ${{ vars.NOTA_MINIMA_VIAGEM }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python -m radar

@@ -31,13 +31,15 @@
           display: flex; flex-direction: column; overflow: hidden; }
   .foto { aspect-ratio: 1; background: #fff; display: grid; place-items: center; position: relative; }
   .foto img { max-width: 88%; max-height: 88%; object-fit: contain; }
+  .icone { font-size: 64px; opacity: .85; }
+  .datas { font-size: 13px; color: var(--suave); }
   .selo { position: absolute; top: 8px; left: 8px; background: var(--destaque); color: #fff;
           font-weight: 700; font-size: 13px; padding: 3px 8px; border-radius: 6px; }
   .raio { position: absolute; top: 8px; right: 8px; background: #111; color: #ffd400;
           font-size: 12px; padding: 3px 7px; border-radius: 6px; }
   .corpo { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
   .titulo { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .de { color: var(--suave); text-decoration: line-through; font-size: 13px; }
+  .de { color: var(--suave); font-size: 13px; }
   .por { font-size: 21px; font-weight: 750; letter-spacing: -.01em; }
   .meta { color: var(--suave); font-size: 12px; display: flex; justify-content: space-between; gap: 6px; }
   .tempo { color: var(--destaque); font-weight: 600; }
@@ -59,13 +61,13 @@
 <body>
 <header>
   <h1>⚡ Radar de Ofertas</h1>
-  <p>Ofertas relâmpago das lojas oficiais. Preço e estoque mudam a qualquer momento. <span id="atualizado"></span></p>
+  <p>Ofertas relâmpago e passagens abaixo do preço normal. Preço e estoque mudam a qualquer momento. <span id="atualizado"></span></p>
 </header>
 <div class="filtros" id="filtros"></div>
 <main id="lista"><div class="vazio">Carregando ofertas…</div></main>
 <footer><span id="aviso-afiliado" hidden>Alguns links são de afiliado: posso receber comissão pelas compras, sem custo extra para você. </span>Confira o preço final na loja antes de comprar.</footer>
 <script>
-const LOJAS = { amazon: "Amazon", mercadolivre: "Mercado Livre", shopee: "Shopee", lomadee: "Lomadee", awin: "Awin" };
+const LOJAS = { amazon: "Amazon", mercadolivre: "Mercado Livre", shopee: "Shopee", lomadee: "Lomadee", awin: "Awin", aviasales: "Passagens" };
 const brl = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 let ofertas = [], filtro = "todas";
 
@@ -88,13 +90,14 @@ function render() {
   lista.innerHTML = vis.map(o => `
     <article class="card">
       <div class="foto">
-        ${o.imagem ? `<img src="${esc(o.imagem)}" alt="" loading="lazy">` : ""}
+        ${o.imagem ? `<img src="${esc(o.imagem)}" alt="" loading="lazy">` : `<span class="icone">${o.viagem ? "✈️" : "🛍️"}</span>`}
         ${o.desconto_pct ? `<span class="selo">-${Math.round(o.desconto_pct)}%</span>` : ""}
-        ${o.relampago ? `<span class="raio">⚡ relâmpago</span>` : ""}
+        ${o.relampago ? `<span class="raio">${o.viagem ? "🔥 tarifa promo" : "⚡ relâmpago"}</span>` : ""}
       </div>
       <div class="corpo">
-        <div class="titulo">${esc(o.titulo)}</div>
-        ${o.preco_original ? `<div class="de">${brl(o.preco_original)}</div>` : ""}
+        <div class="titulo">${esc(o.viagem ? o.titulo.replace(/^✈️\s*/u, "") : o.titulo)}</div>
+        ${o.datas ? `<div class="datas">📅 ${esc(o.datas)}${o.escalas === 0 ? " · direto" : o.escalas ? ` · ${o.escalas} escala${o.escalas > 1 ? "s" : ""}` : ""}</div>` : ""}
+        ${o.preco_original ? `<div class="de">${o.viagem ? '<span class="rotulo">normalmente</span> ' : ""}<s>${brl(o.preco_original)}</s></div>` : ""}
         <div class="por">${brl(o.preco)}</div>
         <div class="motivos">${(o.motivos || []).filter(m => !m.endsWith("% off")).slice(0, 2).map(m => `<span>${esc(m)}</span>`).join("")}</div>
         <div class="meta"><span>${esc(o.vendedor || LOJAS[o.loja] || o.loja)}</span><span class="tempo" data-fim="${o.termina_em || ""}">${restante(o.termina_em)}</span></div>

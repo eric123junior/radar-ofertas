@@ -6,7 +6,8 @@ Fluxo de uma execucao:
   3. filtra (desconto minimo, nota minima, preco maximo, ja enviada)
   4. envia as melhores para o Telegram e atualiza a vitrine
 
---teste mostra o que seria enviado, sem mandar nada e sem gravar no banco.
+--teste mostra o que seria enviado, sem mandar nada e sem gravar no banco
+(o historico existente e usado para calcular o preco normal).
 """
 import argparse
 import logging
@@ -17,7 +18,7 @@ from datetime import datetime, timezone
 from .banco import Banco
 from .canais import vitrine
 from .canais.telegram import Telegram, reais
-from .config import RAIZ, Config
+from .config import Config
 from .fontes import TODAS
 from .pontuacao import avaliar
 
@@ -44,20 +45,30 @@ def selecionar(cfg, banco, ofertas, gravar=True):
     agora = datetime.now(timezone.utc)
     aprovadas = []
     for o in ofertas:
-        menor, _ = banco.menor_preco(o.chave, antes_de=agora)
+        hist = o.chave_historico
+        menor, _ = banco.menor_preco(hist, antes_de=agora)
+        if o.viagem and o.preco_original is None:
+            # sem "preco de" na API: o normal da rota e a mediana do historico
+            mediana, n = banco.mediana(hist, antes_de=agora)
+            if n >= 5:
+                o.preco_original = mediana
         if gravar:
-            banco.registrar_preco(o.chave, o.preco, agora)
-        if o.desconto_pct < cfg.desconto_minimo:
+            banco.registrar_preco(hist, o.preco, agora)
+        if o.viagem:
+            sem_historico = o.preco_original is None
+            if o.desconto_pct < cfg.desconto_minimo_viagem and not (o.relampago and sem_historico):
+                continue
+        elif o.desconto_pct < cfg.desconto_minimo:
             continue
-        if cfg.preco_maximo and o.preco > cfg.preco_maximo:
+        if cfg.preco_maximo and o.preco > cfg.preco_maximo and not o.viagem:
             continue
         mins = o.minutos_restantes(agora)
         if mins is not None and mins <= 5:
             continue
         av = avaliar(o, menor, agora)
-        if av.nota < cfg.nota_minima:
+        if av.nota < (cfg.nota_minima_viagem if o.viagem else cfg.nota_minima):
             continue
-        if banco.ja_enviada(o.chave, o.preco, cfg.horas_sem_repetir):
+        if banco.ja_enviada(hist, o.preco, cfg.horas_sem_repetir):
             continue
         aprovadas.append((o, av))
     banco.con.commit()
@@ -87,7 +98,8 @@ def main(argv=None):
         return 0
     log.info("lojas ativas: %s", ", ".join(f.nome for f in fontes))
 
-    banco = Banco(":memory:" if args.teste else cfg.banco)
+    # no modo teste o historico e lido normalmente, mas nada e gravado
+    banco = Banco(cfg.banco)
     ofertas = coletar(cfg, fontes)
     escolhidas = selecionar(cfg, banco, ofertas, gravar=not args.teste)
     log.info("%d de %d ofertas passaram no filtro", len(escolhidas), len(ofertas))
@@ -103,11 +115,11 @@ def main(argv=None):
     for o, av in escolhidas:
         if tg.ativo() and not tg.enviar(o, av):
             continue
-        banco.marcar_enviada(o.chave, o.preco, av.nota)
+        banco.marcar_enviada(o.chave_historico, o.preco, av.nota)
         enviadas.append((o, av))
     # sem novidade nao regrava (evita um commit vazio a cada execucao);
     # ofertas encerradas tambem somem pela propria vitrine no navegador
-    md = os.path.join(RAIZ, "OFERTAS.md")
+    md = os.path.join(os.path.dirname(cfg.pasta_site), "OFERTAS.md")
     if enviadas or not os.path.exists(md):
         vitrine.atualizar(cfg.pasta_site, enviadas, md=md)
     log.info("%d ofertas publicadas%s", len(enviadas), "" if tg.ativo() else " (só na vitrine)")

@@ -25,11 +25,22 @@ class Oferta:
     termina_em: datetime | None = None
     estoque_restante_pct: float | None = None  # 0 a 100, quando a loja informa
     cupom: str = ""
+    # agrupa ofertas equivalentes para historico e anti-repeticao (ex.: a mesma
+    # rota aerea em datas diferentes); vazio = a propria oferta
+    grupo: str = ""
     extras: dict = field(default_factory=dict)
 
     @property
     def chave(self) -> str:
         return f"{self.loja}:{self.id_loja}"
+
+    @property
+    def chave_historico(self) -> str:
+        return self.grupo or self.chave
+
+    @property
+    def viagem(self) -> bool:
+        return bool(self.extras.get("viagem"))
 
     @property
     def desconto_pct(self) -> float:

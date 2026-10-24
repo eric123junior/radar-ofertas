@@ -60,6 +60,20 @@ class Banco:
         menor, n = row
         return (menor, n) if n else (None, 0)
 
+    def mediana(self, chave, dias=60, antes_de=None):
+        """Mediana dos precos vistos nos ultimos `dias` (o "preco normal")."""
+        antes_de = antes_de or _agora()
+        desde = (antes_de - timedelta(days=dias)).isoformat()
+        precos = [p for (p,) in self.con.execute(
+            "SELECT preco FROM historico_preco WHERE chave = ? AND visto_em >= ? AND visto_em < ? "
+            "ORDER BY preco", (chave, desde, antes_de.isoformat()))]
+        n = len(precos)
+        if not n:
+            return None, 0
+        meio = n // 2
+        med = precos[meio] if n % 2 else (precos[meio - 1] + precos[meio]) / 2
+        return med, n
+
     def ja_enviada(self, chave, preco, horas):
         """True se a oferta saiu nas ultimas `horas` e o preco nao caiu desde entao.
 

@@ -3,9 +3,10 @@
 A ideia e priorizar oferta relampago: desconto alto, que acaba logo, com pouco
 estoque e preco abaixo do que ja vimos. Cada sinal soma pontos:
 
-    desconto        ate 40 pts  (40% de desconto = 20 pts, 80% = 40 pts)
+    desconto        ate 40 pts  (40% de desconto = 20 pts, 80% = 40 pts;
+                                 em viagem, desconto sobre a mediana da rota)
     menor preco     ate 20 pts  (abaixo do menor preco do historico)
-    urgencia        ate 20 pts  (relampago, acaba em poucas horas)
+    urgencia        ate 20 pts  (relampago ou tarifa promocional, acaba logo)
     escassez        ate 10 pts  (estoque restante baixo)
     confianca       ate 10 pts  (avaliacao e volume de vendas)
 
@@ -45,7 +46,11 @@ def avaliar(oferta: Oferta, menor_historico=None, agora=None) -> Avaliacao:
             motivos.append("acima do menor preço histórico")
 
     urg = 0.0
-    if oferta.relampago:
+    if oferta.relampago and oferta.viagem:
+        # tarifa que a propria companhia/buscador marcou como abaixo do normal
+        urg += 15
+        motivos.append("tarifa promocional")
+    elif oferta.relampago:
         urg += 10
         motivos.append("oferta relâmpago")
     mins = oferta.minutos_restantes(agora)

@@ -26,7 +26,10 @@ def atualizar(pasta, novas, md=None):
     for oferta, av in novas:
         d = oferta.para_json()
         d.update(nota=av.nota, motivos=av.motivos, publicada_em=agora.isoformat())
-        d.pop("extras", None)
+        x = d.pop("extras", None) or {}
+        for k in ("viagem", "datas", "escalas"):
+            if k in x:
+                d[k] = x[k]
         por_chave[d["chave"]] = d
 
     corte = (agora - timedelta(hours=JANELA_HORAS)).isoformat()
@@ -63,6 +66,8 @@ def escrever_markdown(caminho, ofertas, agora):
         for o in ofertas:
             titulo = o["titulo"][:90].replace("|", "/").replace("[", "(").replace("]", ")")
             de = f" ~~{_reais(o['preco_original'])}~~" if o.get("preco_original") else ""
+            if o.get("datas"):
+                titulo += f" ({o['datas']})"
             motivos = ", ".join(m for m in o.get("motivos", []) if not m.endswith("% off"))
             linhas.append(
                 f"| {o['nota']:.0f} | -{o['desconto_pct']:.0f}% | **{_reais(o['preco'])}**{de} "
