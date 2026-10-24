@@ -22,12 +22,17 @@ def carregar_dotenv(caminho=None):
             os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 
+def _env(nome, padrao=""):
+    # o GitHub Actions passa variaveis nao cadastradas como texto vazio
+    return os.environ.get(nome, "").strip() or padrao
+
+
 def _lista(nome, padrao=""):
-    return [x.strip() for x in os.environ.get(nome, padrao).split(",") if x.strip()]
+    return [x.strip() for x in _env(nome, padrao).split(",") if x.strip()]
 
 
 def _float(nome, padrao):
-    v = os.environ.get(nome)
+    v = _env(nome)
     return float(v) if v else padrao
 
 
@@ -80,7 +85,7 @@ class Config:
     @classmethod
     def do_ambiente(cls):
         carregar_dotenv()
-        e = os.environ.get
+        e = _env
         pm = e("PRECO_MAXIMO")
         return cls(
             palavras=_lista("PALAVRAS", "fone bluetooth,smartwatch,air fryer,ssd,monitor"),

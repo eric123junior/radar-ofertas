@@ -4,6 +4,7 @@ import os
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -70,6 +71,19 @@ class TestSelecao(unittest.TestCase):
         self.banco.registrar_preco("amazon:A1", 80.0, AGORA - timedelta(days=2))
         self.assertEqual(self.banco.menor_preco("amazon:A1", antes_de=AGORA), (80.0, 1))
         self.assertEqual(self.banco.menor_preco("amazon:A1", antes_de=AGORA - timedelta(days=3)), (None, 0))
+
+
+class TestConfig(unittest.TestCase):
+    def test_variaveis_vazias_usam_padrao(self):
+        vazias = {k: "" for k in ("PALAVRAS", "DESCONTO_MINIMO", "NOTA_MINIMA", "PRECO_MAXIMO",
+                                  "MAX_POR_EXECUCAO", "HORAS_SEM_REPETIR", "RADAR_BANCO", "RADAR_SITE")}
+        with mock.patch.dict(os.environ, vazias), mock.patch("radar.config.carregar_dotenv"):
+            cfg = Config.do_ambiente()
+        self.assertEqual(cfg.max_por_execucao, 10)
+        self.assertEqual(cfg.desconto_minimo, 40.0)
+        self.assertIsNone(cfg.preco_maximo)
+        self.assertIn("ssd", cfg.palavras)
+        self.assertTrue(cfg.banco.endswith("radar.db"))
 
 
 class TestCanais(unittest.TestCase):

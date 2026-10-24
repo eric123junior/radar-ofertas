@@ -78,6 +78,9 @@ def main(argv=None):
 
     fontes = [F(cfg) for F in TODAS]
     fontes = [f for f in fontes if f.ativa()]
+    if bool(cfg.ml_client_id) != bool(cfg.ml_client_secret) and not cfg.ml_access_token:
+        falta = "ML_CLIENT_SECRET" if cfg.ml_client_id else "ML_CLIENT_ID"
+        log.warning("mercadolivre: falta o secret %s; o Mercado Livre fica desligado", falta)
     if not fontes:
         # sai com sucesso para o agendamento nao disparar alerta antes da configuracao
         log.warning("nenhuma loja configurada; preencha o .env ou os secrets (veja .env.example)")
