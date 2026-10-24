@@ -3,6 +3,11 @@ name: Diagnostico
 # roda manualmente para ver quais endpoints do Mercado Livre o app pode usar
 on:
   workflow_dispatch:
+    inputs:
+      codigo:
+        description: "Opcional: o code (TG-...) do link de autorizacao do Mercado Livre"
+        required: false
+        default: ""
 
 jobs:
   mercadolivre:
@@ -18,3 +23,4 @@ jobs:
         env:
           ML_CLIENT_ID: ${{ secrets.ML_CLIENT_ID }}
           ML_CLIENT_SECRET: ${{ secrets.ML_CLIENT_SECRET }}
+          ML_CODIGO: ${{ inputs.codigo }}

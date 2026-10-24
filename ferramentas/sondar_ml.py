@@ -4,6 +4,10 @@ O ML libera ou bloqueia endpoints por politica de cada aplicativo. Este script
 gera o token com ML_CLIENT_ID/ML_CLIENT_SECRET e testa os caminhos que o radar
 pode usar, imprimindo so o status e o comeco da resposta (nunca o token).
 
+Com ML_CODIGO (o "code" que o ML devolve depois de voce autorizar o app no
+navegador) o script tambem troca o codigo por um token de usuario e repete os
+testes com ele. O codigo vale uma vez so e por poucos minutos.
+
 Uso: python ferramentas/sondar_ml.py   (ou o workflow "Diagnostico")
 """
 import json
@@ -16,11 +20,29 @@ from radar.config import Config  # noqa: E402
 from radar.fontes.mercadolivre import MercadoLivre  # noqa: E402
 
 API = "https://api.mercadolibre.com"
+REDIRECT = "https://github.com/eric123junior/radar-ofertas"
 
 
 def mostrar(nome, r):
     corpo = r.text[:350].replace("\n", " ")
     print(f"[{r.status_code}] {nome}\n      {corpo}\n")
+
+
+def token_de_usuario(ml, cfg, codigo):
+    r = ml.http.post(API + "/oauth/token", timeout=30, data={
+        "grant_type": "authorization_code",
+        "client_id": cfg.ml_client_id,
+        "client_secret": cfg.ml_client_secret,
+        "code": codigo.strip(),
+        "redirect_uri": REDIRECT,
+    })
+    if not r.ok:
+        print(f"[{r.status_code}] troca do codigo por token de usuario\n      {r.text[:300]}\n")
+        return None
+    d = r.json()
+    print(f"token de usuario gerado (refresh_token: {'sim' if d.get('refresh_token') else 'nao'}, "
+          f"escopos: {d.get('scope')})\n")
+    return d.get("access_token")
 
 
 def main():
@@ -30,7 +52,18 @@ def main():
     if not tk:
         print("sem token: confira ML_CLIENT_ID e ML_CLIENT_SECRET")
         return 1
-    print("token gerado\n")
+    print("=== token do app ===\n")
+    testar(ml, tk)
+    codigo = os.environ.get("ML_CODIGO", "").strip()
+    if codigo:
+        print("=== token de usuario ===\n")
+        tku = token_de_usuario(ml, cfg, codigo)
+        if tku:
+            testar(ml, tku)
+    return 0
+
+
+def testar(ml, tk):
     h = {"Authorization": f"Bearer {tk}"}
     get = lambda caminho, **p: ml.http.get(API + caminho, headers=h, params=p, timeout=30)  # noqa: E731
 
@@ -62,7 +95,6 @@ def main():
     mostrar("mais vendidos /highlights/MLB/category/MLB1051 (celulares)", r)
 
     mostrar("tendencias /trends/MLB", get("/trends/MLB"))
-    return 0
 
 
 if __name__ == "__main__":
