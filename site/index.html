@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Ofertas</title>
+<meta name="description" content="Ofertas relâmpago selecionadas nas lojas oficiais. Preço e estoque mudam rápido.">
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --texto: #1c1c1e; --suave: #6b6b70;
+    --borda: #e4e2dc; --destaque: #d4380d; --ok: #237a3b; --chip: #f0eee8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121214; --card: #1c1c1f; --texto: #f2f2f3; --suave: #9a9aa1;
+            --borda: #2c2c30; --destaque: #ff6a3d; --ok: #5cc27a; --chip: #26262a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--texto);
+         font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { max-width: 1180px; margin: 0 auto; padding: 28px 16px 8px; }
+  h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+  header p { margin: 4px 0 0; color: var(--suave); }
+  .filtros { max-width: 1180px; margin: 16px auto 0; padding: 0 16px;
+             display: flex; gap: 8px; flex-wrap: wrap; }
+  .filtros button { border: 1px solid var(--borda); background: var(--card); color: var(--texto);
+                    padding: 6px 12px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .filtros button[aria-pressed="true"] { background: var(--texto); color: var(--bg); border-color: var(--texto); }
+  main { max-width: 1180px; margin: 0 auto; padding: 16px;
+         display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--borda); border-radius: 12px;
+          display: flex; flex-direction: column; overflow: hidden; }
+  .foto { aspect-ratio: 1; background: #fff; display: grid; place-items: center; position: relative; }
+  .foto img { max-width: 88%; max-height: 88%; object-fit: contain; }
+  .selo { position: absolute; top: 8px; left: 8px; background: var(--destaque); color: #fff;
+          font-weight: 700; font-size: 13px; padding: 3px 8px; border-radius: 6px; }
+  .raio { position: absolute; top: 8px; right: 8px; background: #111; color: #ffd400;
+          font-size: 12px; padding: 3px 7px; border-radius: 6px; }
+  .corpo { padding: 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .titulo { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .de { color: var(--suave); text-decoration: line-through; font-size: 13px; }
+  .por { font-size: 21px; font-weight: 750; letter-spacing: -.01em; }
+  .meta { color: var(--suave); font-size: 12px; display: flex; justify-content: space-between; gap: 6px; }
+  .tempo { color: var(--destaque); font-weight: 600; }
+  .motivos { display: flex; flex-wrap: wrap; gap: 4px; }
+  .motivos span { background: var(--chip); font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .btn { margin-top: auto; display: block; text-align: center; background: var(--destaque); color: #fff;
+         text-decoration: none; font-weight: 650; padding: 10px; border-radius: 8px; }
+  .vazio { grid-column: 1 / -1; text-align: center; color: var(--suave); padding: 60px 0; }
+  footer { max-width: 1180px; margin: 0 auto; padding: 8px 16px 40px; color: var(--suave); font-size: 12px; }
+  @media (max-width: 520px) {
+    main { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .corpo { padding: 10px; }
+    .por { font-size: 18px; }
+    .meta { flex-direction: column; gap: 0; }
+    .raio { top: auto; bottom: 8px; right: auto; left: 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Radar de Ofertas</h1>
+  <p>Ofertas relâmpago das lojas oficiais. Preço e estoque mudam a qualquer momento. <span id="atualizado"></span></p>
+</header>
+<div class="filtros" id="filtros"></div>
+<main id="lista"><div class="vazio">Carregando ofertas…</div></main>
+<footer>Os links são de afiliado: posso receber comissão pelas compras, sem custo extra para você. Confira o preço final na loja antes de comprar.</footer>
+<script>
+const LOJAS = { amazon: "Amazon", mercadolivre: "Mercado Livre", shopee: "Shopee", lomadee: "Lomadee", awin: "Awin" };
+const brl = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+let ofertas = [], filtro = "todas";
+
+function restante(iso) {
+  if (!iso) return "";
+  const min = (new Date(iso) - Date.now()) / 60000;
+  if (min <= 0) return "encerrada";
+  if (min < 60) return `acaba em ${Math.ceil(min)} min`;
+  if (min < 48 * 60) return `acaba em ${Math.floor(min / 60)}h${String(Math.floor(min % 60)).padStart(2, "0")}`;
+  return "";
+}
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+
+function render() {
+  const lista = document.getElementById("lista");
+  const vis = ofertas.filter(o => filtro === "todas" || o.loja === filtro)
+                     .filter(o => restante(o.termina_em) !== "encerrada");
+  if (!vis.length) { lista.innerHTML = '<div class="vazio">Nenhuma oferta no momento. Volte daqui a pouco.</div>'; return; }
+  lista.innerHTML = vis.map(o => `
+    <article class="card">
+      <div class="foto">
+        ${o.imagem ? `<img src="${esc(o.imagem)}" alt="" loading="lazy">` : ""}
+        ${o.desconto_pct ? `<span class="selo">-${Math.round(o.desconto_pct)}%</span>` : ""}
+        ${o.relampago ? `<span class="raio">⚡ relâmpago</span>` : ""}
+      </div>
+      <div class="corpo">
+        <div class="titulo">${esc(o.titulo)}</div>
+        ${o.preco_original ? `<div class="de">${brl(o.preco_original)}</div>` : ""}
+        <div class="por">${brl(o.preco)}</div>
+        <div class="motivos">${(o.motivos || []).filter(m => !m.endsWith("% off")).slice(0, 2).map(m => `<span>${esc(m)}</span>`).join("")}</div>
+        <div class="meta"><span>${esc(o.vendedor || LOJAS[o.loja] || o.loja)}</span><span class="tempo" data-fim="${o.termina_em || ""}">${restante(o.termina_em)}</span></div>
+        <a class="btn" href="${esc(o.link_afiliado)}" target="_blank" rel="sponsored noopener">Ver oferta</a>
+      </div>
+    </article>`).join("");
+}
+
+function montarFiltros() {
+  const presentes = [...new Set(ofertas.map(o => o.loja))];
+  const box = document.getElementById("filtros");
+  box.innerHTML = ["todas", ...presentes].map(l =>
+    `<button data-l="${l}" aria-pressed="${l === filtro}">${l === "todas" ? "Todas" : LOJAS[l] || l}</button>`).join("");
+  box.onclick = e => {
+    const b = e.target.closest("button"); if (!b) return;
+    filtro = b.dataset.l; montarFiltros(); render();
+  };
+}
+
+fetch("ofertas.json", { cache: "no-store" })
+  .then(r => r.ok ? r.json() : { ofertas: [] })
+  .catch(() => ({ ofertas: [] }))
+  .then(d => {
+    ofertas = d.ofertas || [];
+    if (d.atualizado_em) document.getElementById("atualizado").textContent =
+      "Atualizado " + new Date(d.atualizado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) + ".";
+    montarFiltros(); render();
+    setInterval(() => document.querySelectorAll(".tempo[data-fim]").forEach(el => el.textContent = restante(el.dataset.fim)), 30000);
+  });
+</script>
+</body>
+</html>
