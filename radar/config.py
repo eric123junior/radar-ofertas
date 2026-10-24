@@ -52,6 +52,8 @@ class Config:
 
     # Mercado Livre
     ml_access_token: str = ""
+    ml_client_id: str = ""       # app gratis em developers.mercadolivre.com.br
+    ml_client_secret: str = ""
     ml_link_afiliado: str = ""   # modelo com {url}, ex.: https://seu-gerador/?u={url}
     ml_matt_tool: str = ""       # parametros do programa de afiliados do ML
     ml_matt_word: str = ""
@@ -93,6 +95,8 @@ class Config:
             amazon_host=e("AMAZON_HOST", "webservices.amazon.com.br"),
             amazon_region=e("AMAZON_REGION", "us-east-1"),
             ml_access_token=e("ML_ACCESS_TOKEN", ""),
+            ml_client_id=e("ML_CLIENT_ID", ""),
+            ml_client_secret=e("ML_CLIENT_SECRET", ""),
             ml_link_afiliado=e("ML_LINK_AFILIADO", ""),
             ml_matt_tool=e("ML_MATT_TOOL", ""),
             ml_matt_word=e("ML_MATT_WORD", ""),

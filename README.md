@@ -12,6 +12,26 @@ lojas (APIs oficiais) ──► nota 0-100 ──► filtro ──► Telegram
                     histórico de preços (SQLite)
 ```
 
+## Começando sem afiliação (só o Mercado Livre)
+
+Dá para ligar o radar antes de entrar em qualquer programa de afiliados. As
+ofertas saem com o link direto da loja e sem o aviso de afiliado. Quando você
+se afiliar, basta cadastrar os parâmetros e os links passam a gerar comissão.
+
+1. Entre em [developers.mercadolivre.com.br](https://developers.mercadolivre.com.br)
+   com a sua conta do Mercado Livre e clique em **Criar aplicação**.
+   - Nome e descrição: qualquer um (ex.: "Radar de Ofertas").
+   - URI de redirect: `https://github.com/eric123junior/radar-ofertas`
+   - Permissões: só leitura já basta.
+2. Copie o **Client ID** (também chamado de App ID) e a **Client Secret**.
+3. No GitHub: **Settings > Secrets and variables > Actions > New repository secret**:
+   - `ML_CLIENT_ID` com o Client ID
+   - `ML_CLIENT_SECRET` com a Client Secret
+4. **Actions > Radar de ofertas > Run workflow**. Em ~1 minuto as ofertas aparecem
+   no arquivo [`OFERTAS.md`](OFERTAS.md) do repositório.
+
+Para ver a vitrine pelo navegador, ative o GitHub Pages (veja "Vitrine" abaixo).
+
 ## Por que API oficial e não raspagem
 
 Os programas de afiliados oferecem APIs próprias. Elas entregam preço, desconto e
@@ -47,13 +67,10 @@ reconhecer o "de R$ 500 por R$ 250" de um produto que sempre custou R$ 250.
 | Loja | Onde conseguir | Variáveis |
 |---|---|---|
 | **Amazon** | associados.amazon.com.br > Ferramentas > Product Advertising API. A API só libera depois de 3 vendas qualificadas em 180 dias e deixa de responder se a conta ficar 30 dias sem vendas. | `AMAZON_ACCESS_KEY`, `AMAZON_SECRET_KEY`, `AMAZON_TAG` |
-| **Mercado Livre** | Crie um app em developers.mercadolivre.com.br para obter o token. Os parâmetros de afiliado vêm do painel de Afiliados do ML. | `ML_ACCESS_TOKEN`, `ML_MATT_TOOL`, `ML_MATT_WORD` (ou `ML_LINK_AFILIADO`) |
+| **Mercado Livre** | App grátis em developers.mercadolivre.com.br (veja acima). Os parâmetros de afiliado vêm do painel de Afiliados do ML e são opcionais. | `ML_CLIENT_ID`, `ML_CLIENT_SECRET`; afiliado: `ML_MATT_TOOL`, `ML_MATT_WORD` (ou `ML_LINK_AFILIADO`) |
 | **Shopee** | affiliate.shopee.com.br > Open API | `SHOPEE_APP_ID`, `SHOPEE_SECRET` |
 | **Lomadee** | developer.lomadee.com (app token e source id) | `LOMADEE_APP_TOKEN`, `LOMADEE_SOURCE_ID` |
 | **Awin** | Toolbox > Create-a-Feed, um feed CSV por anunciante aprovado | `AWIN_FEEDS` (URLs separadas por vírgula) |
-
-> O token do Mercado Livre expira em 6 horas. Para uso contínuo, renove o token
-> pelo refresh token do app (melhoria prevista, veja Próximos passos).
 
 ### 2. Bot do Telegram
 
@@ -65,18 +82,26 @@ reconhecer o "de R$ 500 por R$ 250" de um produto que sempre custou R$ 250.
 
 - **Settings > Secrets and variables > Actions > Secrets**: todas as chaves acima.
 - **Settings > Secrets and variables > Actions > Variables** (opcionais):
-  `PALAVRAS`, `DESCONTO_MINIMO`, `NOTA_MINIMA`, `PRECO_MAXIMO`, `MAX_POR_EXECUCAO`.
+  `PALAVRAS`, `DESCONTO_MINIMO`, `NOTA_MINIMA`, `PRECO_MAXIMO`, `MAX_POR_EXECUCAO`,
+  `PUBLICAR_PAGES`.
 - **Actions**: habilite os workflows. O "Radar de ofertas" roda a cada 15 minutos
   e também pelo botão *Run workflow*.
 
-O workflow guarda o histórico (`estado/radar.db`) e a vitrine (`site/ofertas.json`)
-no próprio repositório depois de cada execução.
+O workflow guarda o histórico (`estado/radar.db`), a vitrine (`site/ofertas.json`)
+e a lista legível (`OFERTAS.md`) no próprio repositório depois de cada execução.
 
 ### 4. Vitrine
 
-`site/index.html` é estática e lê `site/ofertas.json`. Para publicar, use o
-GitHub Pages (em repositório privado ele exige plano pago) ou conecte a pasta
-`site/` a um serviço gratuito como Netlify ou Cloudflare Pages.
+`site/index.html` é estática e lê `site/ofertas.json`. Para publicar no GitHub Pages:
+
+1. **Settings > Pages > Build and deployment > Source: GitHub Actions**.
+2. Crie a variável `PUBLICAR_PAGES` com o valor `true`.
+
+A cada execução a vitrine é republicada em `https://eric123junior.github.io/radar-ofertas/`.
+Em repositório **privado** o Pages só existe nos planos pagos do GitHub (Pro ou
+superior). Sem plano pago, há duas saídas: tornar o repositório público (as chaves
+continuam protegidas nos Secrets) ou conectar a pasta `site/` a um serviço
+gratuito como Netlify ou Cloudflare Pages. Enquanto isso, use o `OFERTAS.md`.
 
 ## Rodando localmente
 
@@ -116,7 +141,6 @@ tests/              testes sem rede (respostas de exemplo de cada API)
 
 ## Próximos passos sugeridos
 
-- Renovação automática do token do Mercado Livre (refresh token).
 - Envio para grupos de WhatsApp (API oficial do WhatsApp Business).
 - Encurtador próprio com contagem de cliques por oferta.
 - Busca por categoria e "ofertas do dia" de cada loja, além das palavras-chave.

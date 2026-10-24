@@ -3,6 +3,7 @@ import hashlib
 import os
 import sys
 import unittest
+from unittest import mock
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -61,6 +62,36 @@ class TestMercadoLivre(unittest.TestCase):
         self.assertTrue(o.imagem.endswith("-O.jpg"))
         self.assertEqual(o.link_afiliado,
                          "https://produto.mercadolivre.com.br/MLB-123-smartwatch?matt_tool=12345&matt_word=radar")
+
+    def test_sem_afiliacao_link_direto(self):
+        [o] = mercadolivre.converter(self.RESPOSTA, Config())
+        self.assertEqual(o.link_afiliado, o.link)
+        self.assertFalse(o.afiliado)
+
+    def test_preco_original_pelo_sale_price(self):
+        resp = {"results": [{"id": "MLB2", "title": "X", "price": 60.0, "original_price": None,
+                             "sale_price": {"regular_amount": 120.0}, "permalink": "https://a"}]}
+        [o] = mercadolivre.converter(resp, Config())
+        self.assertEqual(o.desconto_pct, 50.0)
+
+    def test_gera_token_com_client_credentials(self):
+        ml = mercadolivre.MercadoLivre(Config(ml_client_id="ID", ml_client_secret="SEG"))
+        token = mock.Mock(status_code=200, json=lambda: {"access_token": "TK"})
+        busca = mock.Mock(status_code=200, json=lambda: self.RESPOSTA)
+        with mock.patch.object(ml.http, "request", side_effect=[token, busca, busca]) as req:
+            self.assertEqual(len(ml.buscar("fone")), 1)
+            self.assertEqual(len(ml.buscar("ssd")), 1)
+        self.assertEqual(req.call_count, 3)  # token gerado uma vez so
+        self.assertEqual(req.call_args_list[0].kwargs["data"]["grant_type"], "client_credentials")
+        self.assertEqual(req.call_args_list[1].kwargs["headers"]["Authorization"], "Bearer TK")
+
+    def test_token_invalido_nao_insiste(self):
+        ml = mercadolivre.MercadoLivre(Config(ml_client_id="ID", ml_client_secret="ERRADO"))
+        negado = mock.Mock(status_code=401, text='{"error":"invalid_client"}')
+        with mock.patch.object(ml.http, "request", return_value=negado) as req:
+            self.assertEqual(ml.buscar("fone"), [])
+            self.assertEqual(ml.buscar("ssd"), [])
+        self.assertEqual(req.call_count, 1)
 
     def test_modelo_de_link_tem_prioridade(self):
         cfg = Config(ml_link_afiliado="https://ir.to/?u={url}", ml_matt_tool="1")

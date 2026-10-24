@@ -16,6 +16,7 @@ class Oferta:
     preco_original: float | None = None
     link: str = ""            # link do produto, sem afiliacao
     link_afiliado: str = ""   # link final que vai para o canal
+    afiliado: bool = True     # False quando o link ainda vai direto para a loja
     imagem: str = ""
     vendedor: str = ""
     avaliacao: float | None = None   # 0 a 5

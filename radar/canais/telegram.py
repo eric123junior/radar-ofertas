@@ -44,7 +44,8 @@ def montar_legenda(oferta, avaliacao):
     linhas.append(f"🏬 {e(loja)}")
     linhas.append("")
     linhas.append("⏳ Preço e estoque podem mudar a qualquer momento.")
-    linhas.append("<i>Link de afiliado: posso receber comissão, sem custo extra para você.</i>")
+    if oferta.afiliado:
+        linhas.append("<i>Link de afiliado: posso receber comissão, sem custo extra para você.</i>")
     return "\n".join(linhas)
 
 

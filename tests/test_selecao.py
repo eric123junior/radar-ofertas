@@ -85,6 +85,19 @@ class TestCanais(unittest.TestCase):
         self.assertIn("RADAR10", txt)
         self.assertIn("Link de afiliado", txt)
 
+    def test_legenda_sem_afiliacao_nao_tem_aviso(self):
+        o = oferta(afiliado=False)
+        self.assertNotIn("afiliado", montar_legenda(o, avaliar(o)))
+
+    def test_markdown(self):
+        with tempfile.TemporaryDirectory() as d:
+            md = os.path.join(d, "OFERTAS.md")
+            o = oferta(titulo="Fone | Pro [2026]", vendedor="Loja X")
+            vitrine.atualizar(d, [(o, avaliar(o))], md=md)
+            with open(md, encoding="utf-8") as f:
+                txt = f.read()
+            self.assertIn("| -50% | **R$ 100,00** ~~R$ 200,00~~ | [Fone / Pro (2026)](https://a/1) | Loja X |", txt)
+
     def test_vitrine_remove_encerradas(self):
         with tempfile.TemporaryDirectory() as d:
             viva = oferta(id_loja="VIVA")

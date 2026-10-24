@@ -34,7 +34,11 @@ class Fonte:
                 r = self.http.request(metodo, url, **kw)
                 if r.status_code == 429 or r.status_code >= 500:
                     raise requests.HTTPError(f"HTTP {r.status_code}")
-                r.raise_for_status()
+                if r.status_code >= 400:
+                    # erro do lado de quem chama (credencial, parametro): nao adianta repetir
+                    log.warning("%s: HTTP %d em %s: %s", self.nome, r.status_code,
+                                url.split("?")[0], r.text[:300])
+                    return None
                 return r
             except requests.RequestException as e:
                 if i == tentativas:

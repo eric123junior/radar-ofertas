@@ -2,7 +2,7 @@ name: Testes
 
 on:
   push:
-    paths-ignore: ["estado/**", "site/ofertas.json"]
+    paths-ignore: ["estado/**", "site/ofertas.json", "OFERTAS.md"]
   pull_request:
 
 jobs:

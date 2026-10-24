@@ -63,7 +63,7 @@
 </header>
 <div class="filtros" id="filtros"></div>
 <main id="lista"><div class="vazio">Carregando ofertas…</div></main>
-<footer>Os links são de afiliado: posso receber comissão pelas compras, sem custo extra para você. Confira o preço final na loja antes de comprar.</footer>
+<footer><span id="aviso-afiliado" hidden>Alguns links são de afiliado: posso receber comissão pelas compras, sem custo extra para você. </span>Confira o preço final na loja antes de comprar.</footer>
 <script>
 const LOJAS = { amazon: "Amazon", mercadolivre: "Mercado Livre", shopee: "Shopee", lomadee: "Lomadee", awin: "Awin" };
 const brl = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -98,7 +98,7 @@ function render() {
         <div class="por">${brl(o.preco)}</div>
         <div class="motivos">${(o.motivos || []).filter(m => !m.endsWith("% off")).slice(0, 2).map(m => `<span>${esc(m)}</span>`).join("")}</div>
         <div class="meta"><span>${esc(o.vendedor || LOJAS[o.loja] || o.loja)}</span><span class="tempo" data-fim="${o.termina_em || ""}">${restante(o.termina_em)}</span></div>
-        <a class="btn" href="${esc(o.link_afiliado)}" target="_blank" rel="sponsored noopener">Ver oferta</a>
+        <a class="btn" href="${esc(o.link_afiliado)}" target="_blank" rel="${o.afiliado === false ? "" : "sponsored "}noopener">Ver oferta</a>
       </div>
     </article>`).join("");
 }
@@ -119,6 +119,7 @@ fetch("ofertas.json", { cache: "no-store" })
   .catch(() => ({ ofertas: [] }))
   .then(d => {
     ofertas = d.ofertas || [];
+    document.getElementById("aviso-afiliado").hidden = !ofertas.some(o => o.afiliado !== false);
     if (d.atualizado_em) document.getElementById("atualizado").textContent =
       "Atualizado " + new Date(d.atualizado_em).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) + ".";
     montarFiltros(); render();

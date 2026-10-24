@@ -10,13 +10,14 @@ Fluxo de uma execucao:
 """
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime, timezone
 
 from .banco import Banco
 from .canais import vitrine
 from .canais.telegram import Telegram, reais
-from .config import Config
+from .config import RAIZ, Config
 from .fontes import TODAS
 from .pontuacao import avaliar
 
@@ -101,7 +102,7 @@ def main(argv=None):
             continue
         banco.marcar_enviada(o.chave, o.preco, av.nota)
         enviadas.append((o, av))
-    vitrine.atualizar(cfg.pasta_site, enviadas)
+    vitrine.atualizar(cfg.pasta_site, enviadas, md=os.path.join(RAIZ, "OFERTAS.md"))
     log.info("%d ofertas publicadas%s", len(enviadas), "" if tg.ativo() else " (só na vitrine)")
     banco.fechar()
     return 0
